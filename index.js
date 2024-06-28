@@ -29,8 +29,8 @@ connection.connect(error => {
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: 'your-email@gmail.com',
-    pass: 'your-email-password'
+    user: 'kusitour.app@gmail.com',
+    pass: 'fendo365S'
   }
 });
 
