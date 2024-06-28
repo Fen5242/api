@@ -121,7 +121,7 @@ app.post('/api/reset-password', (req, res) => {
       subject: 'Restablecimiento de Contraseña',
       text: `Has recibido este correo porque tú (u otra persona) ha solicitado el restablecimiento de la contraseña para tu cuenta.\n\n
              Por favor haz clic en el siguiente enlace, o copia y pega esta dirección en tu navegador para completar el proceso:\n\n
-             http://localhost:3000/reset/${token}\n\n
+             https://kusitour-api.up.railway.app/reset/${token}\n\n
              Si no solicitaste esto, por favor ignora este correo y tu contraseña permanecerá sin cambios.\n`
     };
 
@@ -132,7 +132,7 @@ app.post('/api/reset-password', (req, res) => {
         return;
       }
       console.log('Reset email sent successfully:', response);
-      res.status(200).json({ message: 'Reset email sent successfully' });
+      res.status(200).json({ message: 'Correo de restablecimiento enviado exitosamente' });
     });
   });
 });
@@ -166,7 +166,7 @@ app.post('/api/reset/:token', async (req, res) => {
         return;
       }
       console.log('Password updated successfully:', updateResults);
-      res.status(200).json({ message: 'Password updated successfully' });
+      res.status(200).json({ message: 'Contraseña actualizada exitosamente' });
     });
   });
 });
