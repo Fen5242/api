@@ -9,11 +9,11 @@ const port = process.env.PORT || 3000;
 app.use(bodyParser.json());
 
 const connection = mysql.createConnection({
-  host: 'kusitour.cshzgid8yldu.us-east-1.rds.amazonaws.com', // Reemplaza con tu endpoint de RDS
-  port: 3306, // Asegúrate de que el puerto sea 3306
-  user: 'root', // Reemplaza con tu nombre de usuario de RDS
-  password: 'fendo365S', // Reemplaza con tu contraseña de RDS
-  database: 'mydatabase' // Reemplaza con tu nombre de base de datos
+  host: 'kusitour.cshzgid8yldu.us-east-1.rds.amazonaws.com',
+  port: 3306,
+  user: 'root',
+  password: 'fendo365S',
+  database: 'mydatabase'
 });
 
 connection.connect(error => {
