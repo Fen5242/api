@@ -117,12 +117,12 @@ app.post('/api/reset-password', (req, res) => {
 
     const mailOptions = {
       to: email,
-      from: 'your-email@gmail.com',
-      subject: 'Password Reset',
-      text: `You are receiving this because you (or someone else) have requested the reset of the password for your account.\n\n
-             Please click on the following link, or paste this into your browser to complete the process:\n\n
+      from: 'kusitour.app@gmail.com',
+      subject: 'Restablecimiento de Contraseña',
+      text: `Has recibido este correo porque tú (u otra persona) ha solicitado el restablecimiento de la contraseña para tu cuenta.\n\n
+             Por favor haz clic en el siguiente enlace, o copia y pega esta dirección en tu navegador para completar el proceso:\n\n
              http://localhost:3000/reset/${token}\n\n
-             If you did not request this, please ignore this email and your password will remain unchanged.\n`
+             Si no solicitaste esto, por favor ignora este correo y tu contraseña permanecerá sin cambios.\n`
     };
 
     transporter.sendMail(mailOptions, (error, response) => {
