@@ -39,7 +39,7 @@ app.post('/api/reset-password', async (req, res) => {
   const token = crypto.randomBytes(20).toString('hex');
 
   const query = 'UPDATE `Users` SET resetPasswordToken = ?, resetPasswordExpires = ? WHERE email = ?';
-  const values = [token, Date.now() + 3600000, email];
+  const values = [token, Date.now() + 3600000, email]; // 1 hour
 
   connection.query(query, values, (error, results) => {
     if (error) {
