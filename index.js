@@ -14,7 +14,10 @@ const connection = mysql.createConnection({
   port: process.env.MYSQLPORT || 40223,
   user: process.env.MYSQLUSER || 'root',
   password: process.env.MYSQLPASSWORD || 'cDkeDggxaDalURiUCtwbDvngdLjfYNRM',
-  database: process.env.MYSQLDATABASE || 'railway'
+  database: process.env.MYSQLDATABASE || 'railway',
+  ssl: {
+    rejectUnauthorized: false
+  }
 });
 
 // Conecta con la base de datos
