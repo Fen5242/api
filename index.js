@@ -9,7 +9,7 @@ const port = process.env.PORT || 3000;
 app.use(bodyParser.json());
 
 // Conectar a MongoDB
-mongoose.connect('mongodb://mongo:vPHqbXyYffkFVJLdVVsFKkqeSRRnptyi@monorail.proxy.rlwy.net:29424/your-database-name', {
+mongoose.connect('mongodb://mongo:vPHqbXyYfTkfVJLdYVsFKkqeSRRnptYi@monorail.proxy.rlwy.net:29424/test', {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 })
