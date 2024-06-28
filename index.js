@@ -10,10 +10,10 @@ app.use(bodyParser.json());
 
 // Configura la conexión con la base de datos
 const connection = mysql.createConnection({
-  host: process.env.MYSQLHOST || 'roundhouse.proxy.rlwy.net',
-  port: process.env.MYSQLPORT || 31523,
+  host: process.env.MYSQLHOST || 'monorail.proxy.rlwy.net',
+  port: process.env.MYSQLPORT || 40223,
   user: process.env.MYSQLUSER || 'root',
-  password: process.env.MYSQLPASSWORD || 'lJinlsBQFCJZRVIdMzmaeQwySEnZuFku',
+  password: process.env.MYSQLPASSWORD || 'cDkeDggxaDalURiUCtwbDvngdLjfYNRM',
   database: process.env.MYSQLDATABASE || 'railway'
 });
 
