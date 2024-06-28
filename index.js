@@ -8,14 +8,16 @@ const port = process.env.PORT || 3000;
 
 app.use(bodyParser.json());
 
+// Configura la conexión con la base de datos
 const connection = mysql.createConnection({
   host: process.env.MYSQLHOST || 'roundhouse.proxy.rlwy.net',
-  port: process.env.MYSQLPORT || 42318,
+  port: process.env.MYSQLPORT || 31523,
   user: process.env.MYSQLUSER || 'root',
-  password: process.env.MYSQLPASSWORD || 'CtXLxHbsElagTSwGPbOznIkstuaEiAEA',
+  password: process.env.MYSQLPASSWORD || 'lJinlsBQFCJZRVIdMzmaeQwySEnZuFku',
   database: process.env.MYSQLDATABASE || 'railway'
 });
 
+// Conecta con la base de datos
 connection.connect(error => {
   if (error) {
     console.error('Error connecting to the database:', error);
@@ -24,7 +26,28 @@ connection.connect(error => {
   console.log('Connected to the database');
 });
 
-// Ruta para registrar nuevos usuarios
+// Define una ruta para crear la tabla Users
+app.get('/create-users-table', (req, res) => {
+  const createTableQuery = `
+    CREATE TABLE IF NOT EXISTS Users (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      username VARCHAR(50) UNIQUE NOT NULL,
+      email VARCHAR(100) UNIQUE NOT NULL,
+      password VARCHAR(255) NOT NULL
+    );
+  `;
+
+  connection.query(createTableQuery, (error, results) => {
+    if (error) {
+      console.error('Error creating Users table:', error);
+      res.status(500).json({ error: 'Error creating Users table' });
+      return;
+    }
+    res.status(200).json({ message: 'Users table created successfully', results });
+  });
+});
+
+// Define una ruta para registrar usuarios
 app.post('/api/users', async (req, res) => {
   const { username, email, password } = req.body;
   try {
@@ -47,7 +70,7 @@ app.post('/api/users', async (req, res) => {
   }
 });
 
-// Ruta para iniciar sesión
+// Define una ruta para iniciar sesión
 app.post('/api/users/login', async (req, res) => {
   const { username, password } = req.body;
   try {
@@ -73,6 +96,7 @@ app.post('/api/users/login', async (req, res) => {
             id: user.id,
             username: user.username,
             email: user.email
+            // No es seguro devolver la contraseña, se recomienda omitir esto.
           }
         });
       } else {
