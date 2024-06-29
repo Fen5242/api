@@ -1,9 +1,8 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const mysql = require('mysql2');
-const bcrypt = require('bcryptjs');
-const nodemailer = require('nodemailer');
 const crypto = require('crypto');
+const nodemailer = require('nodemailer');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -23,97 +22,71 @@ connection.connect(error => {
     console.error('Error connecting to the database:', error);
     return;
   }
-  console.log('Connected to the database');
+  console.log('Connected to the database successfully');
 });
 
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: 'kusitour.app@gmail.com',
-    pass: 'wehklxnlzmaspsut'  // Usar la contraseña de aplicación generada
+    user: 'sanchezfsb3@gmail.com',
+    pass: 'ameb sqso anmt tatr'  // Replace with your app-specific password
   }
 });
 
-// Reset password request
 app.post('/api/reset-password', (req, res) => {
   const { email } = req.body;
-  const token = crypto.randomBytes(3).toString('hex').toUpperCase(); // Genera un código de 6 caracteres
+  console.log("Received reset request for email:", email);
 
-  const query = 'UPDATE Users SET resetPasswordToken = ?, resetPasswordExpires = ? WHERE email = ?';
-  const values = [token, Date.now() + 3600000, email]; // 1 hour
+  if (!email) {
+    console.log("No email provided");
+    return res.status(400).json({ error: "No email provided" });
+  }
 
-  connection.query(query, values, (error, results) => {
+  const query = 'SELECT * FROM Users WHERE email = ?';
+  connection.query(query, [email], (error, results) => {
     if (error) {
-      console.error('Error updating user with reset token:', error);
-      res.status(500).json({ error: 'Error updating user with reset token', details: error.message });
-      return;
+      console.error('Database query error:', error);
+      return res.status(500).json({ error: 'Error finding user' });
     }
 
-    if (results.affectedRows === 0) {
-      res.status(404).json({ error: 'No user found with that email address' });
-      return;
+    if (results.length === 0) {
+      console.log("No user found with email:", email);
+      return res.status(404).json({ error: 'No user found with that email address' });
     }
 
-    const mailOptions = {
-      to: email,
-      from: 'kusitour.app@gmail.com',
-      subject: 'Código de Restablecimiento de Contraseña',
-      text: `Has recibido este correo porque tú (u otra persona) ha solicitado el restablecimiento de la contraseña para tu cuenta.\n\n
-             Por favor usa el siguiente código para completar el proceso de restablecimiento de contraseña:\n\n
-             Código: ${token}\n\n
-             Si no solicitaste esto, por favor ignora este correo y tu contraseña permanecerá sin cambios.\n`
-    };
+    const user = results[0];
+    const token = crypto.randomBytes(20).toString('hex');
+    console.log("Generated token:", token);
 
-    transporter.sendMail(mailOptions, (error, response) => {
-      if (error) {
-        console.error('Error sending reset email:', error);
-        res.status(500).json({ error: 'Error sending reset email', details: error.message });
-        return;
+    const updateQuery = 'UPDATE Users SET resetPasswordToken = ?, resetPasswordExpires = ? WHERE email = ?';
+    connection.query(updateQuery, [token, Date.now() + 3600000, email], (updateError, updateResults) => {
+      if (updateError) {
+        console.error('Error updating user with reset token:', updateError);
+        return res.status(500).json({ error: 'Error updating user with reset token' });
       }
-      console.log('Reset email sent successfully:', response);
-      res.status(200).json({ message: 'Correo de restablecimiento enviado exitosamente' });
+
+      console.log("Reset token set for user:", user.id);
+
+      const mailOptions = {
+        to: email,
+        from: 'kusitour.app@gmail.com',
+        subject: 'Password Reset',
+        text: `You are receiving this because you (or someone else) have requested the reset of the password for your account.
+               Please use the following token for resetting your password: ${token}`
+      };
+
+      transporter.sendMail(mailOptions, (mailError, info) => {
+        if (mailError) {
+          console.error('Error sending mail:', mailError);
+          return res.status(500).json({ error: 'Error sending reset email' });
+        }
+        console.log('Reset email sent:', info.response);
+        res.status(200).json({ message: 'Reset email sent successfully' });
+      });
     });
   });
 });
 
-// Verificar código
-app.post('/api/verify-code', (req, res) => {
-  const { email, code } = req.body;
-
-  const query = 'SELECT * FROM Users WHERE email = ? AND resetPasswordToken = ? AND resetPasswordExpires > ?';
-  connection.query(query, [email, code, Date.now()], (error, results) => {
-    if (error) {
-      console.error('Error finding user with token:', error);
-      res.status(500).json({ error: 'Error finding user with token', details: error.message });
-      return;
-    }
-
-    if (results.length === 0) {
-      res.status(400).json({ error: 'Código de restablecimiento inválido o expirado' });
-      return;
-    }
-
-    res.status(200).json({ message: 'Código verificado correctamente' });
-  });
-});
-
-// Cambiar contraseña
-app.post('/api/change-password', async (req, res) => {
-  const { email, password } = req.body;
-
-  const hashedPassword = await bcrypt.hash(password, 10);
-  const query = 'UPDATE Users SET password = ?, resetPasswordToken = NULL, resetPasswordExpires = NULL WHERE email = ?';
-  connection.query(query, [hashedPassword, email], (error, results) => {
-    if (error) {
-      console.error('Error updating password:', error);
-      res.status(500).json({ error: 'Error updating password', details: error.message });
-      return;
-    }
-
-    res.status(200).json({ message: 'Contraseña actualizada exitosamente' });
-  });
-});
-
 app.listen(port, () => {
-  console.log(`HTTP Server running on port ${port}`);
+  console.log(`Server running on port ${port}`);
 });
