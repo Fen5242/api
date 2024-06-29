@@ -43,14 +43,14 @@ app.post('/api/users', async (req, res) => {
     connection.query(query, [username, email, hashedPassword], (error, results) => {
       if (error) {
         console.error('Error inserting user:', error);
-        res.status(500).json({ error: 'Error inserting user' });
+        res.status(500).json({ error: 'Error inserting user', details: error.message });
         return;
       }
       res.status(201).json({ id: results.insertId, username, email });
     });
   } catch (error) {
     console.error('Error hashing password:', error);
-    res.status(500).json({ error: 'Error hashing password' });
+    res.status(500).json({ error: 'Error hashing password', details: error.message });
   }
 });
 
@@ -62,7 +62,7 @@ app.post('/api/users/login', async (req, res) => {
     connection.query(query, [username], async (error, results) => {
       if (error) {
         console.error('Error finding user:', error);
-        res.status(500).json({ error: 'Error finding user' });
+        res.status(500).json({ error: 'Error finding user', details: error.message });
         return;
       }
 
@@ -88,7 +88,7 @@ app.post('/api/users/login', async (req, res) => {
     });
   } catch (error) {
     console.error('Error during login:', error);
-    res.status(500).json({ error: 'Error during login' });
+    res.status(500).json({ error: 'Error during login', details: error.message });
   }
 });
 
@@ -103,7 +103,7 @@ app.post('/api/reset-password', (req, res) => {
   connection.query(query, values, (error, results) => {
     if (error) {
       console.error('Error updating user with reset token:', error);
-      res.status(500).json({ error: 'Error updating user with reset token' });
+      res.status(500).json({ error: 'Error updating user with reset token', details: error.message });
       return;
     }
 
@@ -124,7 +124,7 @@ app.post('/api/reset-password', (req, res) => {
     transporter.sendMail(mailOptions, (error, response) => {
       if (error) {
         console.error('Error sending reset email:', error);
-        res.status(500).json({ error: 'Error sending reset email' });
+        res.status(500).json({ error: 'Error sending reset email', details: error.message });
         return;
       }
       console.log('Reset email sent successfully:', response);
@@ -141,7 +141,7 @@ app.post('/api/verify-code', (req, res) => {
   connection.query(query, [email, code, Date.now()], (error, results) => {
     if (error) {
       console.error('Error verifying code:', error);
-      res.status(500).json({ error: 'Error verifying code' });
+      res.status(500).json({ error: 'Error verifying code', details: error.message });
       return;
     }
 
@@ -165,14 +165,14 @@ app.post('/api/reset-password/:email', async (req, res) => {
     connection.query(query, [hashedPassword, email], (error, results) => {
       if (error) {
         console.error('Error updating password:', error);
-        res.status(500).json({ error: 'Error updating password' });
+        res.status(500).json({ error: 'Error updating password', details: error.message });
         return;
       }
       res.status(200).json({ message: 'Contraseña actualizada exitosamente' });
     });
   } catch (error) {
     console.error('Error hashing password:', error);
-    res.status(500).json({ error: 'Error hashing password' });
+    res.status(500).json({ error: 'Error hashing password', details: error.message });
   }
 });
 
