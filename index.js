@@ -30,7 +30,7 @@ const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
     user: 'kusitour.app@gmail.com',
-    pass: 'wehk lxnl zmas psut' // Reemplaza con la contraseña de la aplicación generada
+    pass: 'wehk lxnl zmas psut' // Aquí se usa la contraseña de aplicación generada
   }
 });
 
@@ -39,10 +39,7 @@ app.post('/api/users', async (req, res) => {
   const { username, email, password } = req.body;
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
-    const query = `
-      INSERT INTO Users (username, email, password)
-      VALUES (?, ?, ?);
-    `;
+    const query = `INSERT INTO Users (username, email, password) VALUES (?, ?, ?);`;
     connection.query(query, [username, email, hashedPassword], (error, results) => {
       if (error) {
         console.error('Error inserting user:', error);
@@ -98,10 +95,10 @@ app.post('/api/users/login', async (req, res) => {
 // Reset password request
 app.post('/api/reset-password', (req, res) => {
   const { email } = req.body;
-  const token = crypto.randomBytes(20).toString('hex');
+  const token = crypto.randomBytes(6).toString('hex').substring(0, 6); // Genera un código de 6 dígitos
 
   const query = 'UPDATE Users SET resetPasswordToken = ?, resetPasswordExpires = ? WHERE email = ?';
-  const values = [token, Date.now() + 3600000, email]; // 1 hour
+  const values = [token, Date.now() + 3600000, email]; // 1 hora
 
   connection.query(query, values, (error, results) => {
     if (error) {
@@ -120,8 +117,7 @@ app.post('/api/reset-password', (req, res) => {
       from: 'kusitour.app@gmail.com',
       subject: 'Restablecimiento de Contraseña',
       text: `Has recibido este correo porque tú (u otra persona) ha solicitado el restablecimiento de la contraseña para tu cuenta.\n\n
-             Por favor haz clic en el siguiente enlace, o copia y pega esta dirección en tu navegador para completar el proceso:\n\n
-             https://kusitour-api.up.railway.app/reset/${token}\n\n
+             Tu código de verificación es: ${token}\n\n
              Si no solicitaste esto, por favor ignora este correo y tu contraseña permanecerá sin cambios.\n`
     };
 
@@ -137,38 +133,47 @@ app.post('/api/reset-password', (req, res) => {
   });
 });
 
-// Reset password
-app.post('/api/reset/:token', async (req, res) => {
-  const { password } = req.body;
-  const token = req.params.token;
+// Verify code
+app.post('/api/verify-code', (req, res) => {
+  const { email, code } = req.body;
 
-  const query = 'SELECT * FROM Users WHERE resetPasswordToken = ? AND resetPasswordExpires > ?';
-  connection.query(query, [token, Date.now()], async (error, results) => {
+  const query = 'SELECT * FROM Users WHERE email = ? AND resetPasswordToken = ? AND resetPasswordExpires > ?';
+  connection.query(query, [email, code, Date.now()], (error, results) => {
     if (error) {
-      console.error('Error finding user with token:', error);
-      res.status(500).json({ error: 'Error finding user with token' });
+      console.error('Error verifying code:', error);
+      res.status(500).json({ error: 'Error verifying code' });
       return;
     }
 
     if (results.length === 0) {
-      res.status(400).json({ error: 'Password reset token is invalid or has expired' });
+      res.status(400).json({ error: 'Invalid or expired code' });
       return;
     }
 
-    const user = results[0];
-    const hashedPassword = await bcrypt.hash(password, 10);
+    res.status(200).json({ message: 'Code verified successfully' });
+  });
+});
 
-    const updateQuery = 'UPDATE Users SET password = ?, resetPasswordToken = NULL, resetPasswordExpires = NULL WHERE id = ?';
-    connection.query(updateQuery, [hashedPassword, user.id], (updateError, updateResults) => {
-      if (updateError) {
-        console.error('Error updating password:', updateError);
+// Reset password
+app.post('/api/reset-password/:email', async (req, res) => {
+  const { password } = req.body;
+  const email = req.params.email;
+
+  try {
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const query = 'UPDATE Users SET password = ?, resetPasswordToken = NULL, resetPasswordExpires = NULL WHERE email = ?';
+    connection.query(query, [hashedPassword, email], (error, results) => {
+      if (error) {
+        console.error('Error updating password:', error);
         res.status(500).json({ error: 'Error updating password' });
         return;
       }
-      console.log('Password updated successfully:', updateResults);
       res.status(200).json({ message: 'Contraseña actualizada exitosamente' });
     });
-  });
+  } catch (error) {
+    console.error('Error hashing password:', error);
+    res.status(500).json({ error: 'Error hashing password' });
+  }
 });
 
 app.listen(port, () => {
