@@ -39,18 +39,21 @@ app.post('/api/users', async (req, res) => {
   const { username, email, password } = req.body;
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
-    const query = `INSERT INTO Users (username, email, password) VALUES (?, ?, ?);`;
+    const query = `
+      INSERT INTO Users (username, email, password)
+      VALUES (?, ?, ?);
+    `;
     connection.query(query, [username, email, hashedPassword], (error, results) => {
       if (error) {
         console.error('Error inserting user:', error);
-        res.status(500).json({ error: 'Error inserting user', details: error.message });
+        res.status(500).json({ error: 'Error inserting user' });
         return;
       }
       res.status(201).json({ id: results.insertId, username, email });
     });
   } catch (error) {
     console.error('Error hashing password:', error);
-    res.status(500).json({ error: 'Error hashing password', details: error.message });
+    res.status(500).json({ error: 'Error hashing password' });
   }
 });
 
@@ -62,7 +65,7 @@ app.post('/api/users/login', async (req, res) => {
     connection.query(query, [username], async (error, results) => {
       if (error) {
         console.error('Error finding user:', error);
-        res.status(500).json({ error: 'Error finding user', details: error.message });
+        res.status(500).json({ error: 'Error finding user' });
         return;
       }
 
@@ -88,17 +91,18 @@ app.post('/api/users/login', async (req, res) => {
     });
   } catch (error) {
     console.error('Error during login:', error);
-    res.status(500).json({ error: 'Error during login', details: error.message });
+    res.status(500).json({ error: 'Error during login' });
   }
 });
 
 // Reset password request
 app.post('/api/reset-password', (req, res) => {
   const { email } = req.body;
-  const token = crypto.randomBytes(6).toString('hex').substring(0, 6); // Genera un código de 6 dígitos
+  const token = crypto.randomBytes(20).toString('hex');
+  const code = Math.floor(100000 + Math.random() * 900000).toString();
 
-  const query = 'UPDATE Users SET resetPasswordToken = ?, resetPasswordExpires = ? WHERE email = ?';
-  const values = [token, Date.now() + 3600000, email]; // 1 hora
+  const query = 'UPDATE Users SET resetPasswordToken = ?, resetPasswordExpires = ?, resetCode = ? WHERE email = ?';
+  const values = [token, Date.now() + 3600000, code, email]; // 1 hour
 
   connection.query(query, values, (error, results) => {
     if (error) {
@@ -117,7 +121,7 @@ app.post('/api/reset-password', (req, res) => {
       from: 'kusitour.app@gmail.com',
       subject: 'Restablecimiento de Contraseña',
       text: `Has recibido este correo porque tú (u otra persona) ha solicitado el restablecimiento de la contraseña para tu cuenta.\n\n
-             Tu código de verificación es: ${token}\n\n
+             Aquí está tu código de verificación: ${code}\n\n
              Si no solicitaste esto, por favor ignora este correo y tu contraseña permanecerá sin cambios.\n`
     };
 
@@ -137,8 +141,10 @@ app.post('/api/reset-password', (req, res) => {
 app.post('/api/verify-code', (req, res) => {
   const { email, code } = req.body;
 
-  const query = 'SELECT * FROM Users WHERE email = ? AND resetPasswordToken = ? AND resetPasswordExpires > ?';
-  connection.query(query, [email, code, Date.now()], (error, results) => {
+  const query = 'SELECT * FROM Users WHERE email = ? AND resetCode = ? AND resetPasswordExpires > ?';
+  const values = [email, code, Date.now()];
+
+  connection.query(query, values, (error, results) => {
     if (error) {
       console.error('Error verifying code:', error);
       res.status(500).json({ error: 'Error verifying code', details: error.message });
@@ -146,34 +152,46 @@ app.post('/api/verify-code', (req, res) => {
     }
 
     if (results.length === 0) {
-      res.status(400).json({ error: 'Invalid or expired code' });
+      res.status(400).json({ error: 'Código de verificación inválido o expirado' });
       return;
     }
 
-    res.status(200).json({ message: 'Code verified successfully' });
+    res.status(200).json({ message: 'Código de verificación válido' });
   });
 });
 
 // Reset password
-app.post('/api/reset-password/:email', async (req, res) => {
+app.post('/api/reset/:token', async (req, res) => {
   const { password } = req.body;
-  const email = req.params.email;
+  const token = req.params.token;
 
-  try {
+  const query = 'SELECT * FROM Users WHERE resetPasswordToken = ? AND resetPasswordExpires > ?';
+  connection.query(query, [token, Date.now()], async (error, results) => {
+    if (error) {
+      console.error('Error finding user with token:', error);
+      res.status(500).json({ error: 'Error finding user with token', details: error.message });
+      return;
+    }
+
+    if (results.length === 0) {
+      res.status(400).json({ error: 'Password reset token is invalid or has expired' });
+      return;
+    }
+
+    const user = results[0];
     const hashedPassword = await bcrypt.hash(password, 10);
-    const query = 'UPDATE Users SET password = ?, resetPasswordToken = NULL, resetPasswordExpires = NULL WHERE email = ?';
-    connection.query(query, [hashedPassword, email], (error, results) => {
-      if (error) {
-        console.error('Error updating password:', error);
-        res.status(500).json({ error: 'Error updating password', details: error.message });
+
+    const updateQuery = 'UPDATE Users SET password = ?, resetPasswordToken = NULL, resetPasswordExpires = NULL, resetCode = NULL WHERE id = ?';
+    connection.query(updateQuery, [hashedPassword, user.id], (updateError, updateResults) => {
+      if (updateError) {
+        console.error('Error updating password:', updateError);
+        res.status(500).json({ error: 'Error updating password', details: updateError.message });
         return;
       }
+      console.log('Password updated successfully:', updateResults);
       res.status(200).json({ message: 'Contraseña actualizada exitosamente' });
     });
-  } catch (error) {
-    console.error('Error hashing password:', error);
-    res.status(500).json({ error: 'Error hashing password', details: error.message });
-  }
+  });
 });
 
 app.listen(port, () => {
