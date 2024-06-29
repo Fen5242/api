@@ -30,7 +30,7 @@ const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
     user: 'kusitour.app@gmail.com',
-    pass: 'wehk lxnl zmas psut' // Aquí se usa la contraseña de aplicación generada
+    pass: 'wehk lxnl zmas psut'
   }
 });
 
