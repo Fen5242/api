@@ -96,10 +96,10 @@ app.post('/api/reset-password', (req, res) => {
     const { email } = req.body;
     const resetCode = Math.floor(100000 + Math.random() * 900000); // Genera un código numérico de 6 dígitos
 
-    const query = 'UPDATE Users SET resetPasswordToken = ?, resetPasswordExpires = ? WHERE email = ?';
-    const values = [resetCode, Date.now() + 300000, email]; // Expira en 5 minutos
+    const queryUpdate = 'UPDATE Users SET resetPasswordToken = ?, resetPasswordExpires = ? WHERE email = ?';
+    const valuesUpdate = [resetCode, Date.now() + 300000, email]; // Expira en 5 minutos
 
-    connection.query(query, values, (error, results) => {
+    connection.query(queryUpdate, valuesUpdate, (error, results) => {
         if (error) {
             console.error('Error updating user with reset code:', error);
             return res.status(500).json({ error: 'Error updating user with reset code' });
@@ -121,10 +121,31 @@ app.post('/api/reset-password', (req, res) => {
                 console.error('Error sending mail:', mailError);
                 return res.status(500).json({ error: 'Error sending reset email' });
             }
-            res.status(200).json({ message: 'Reset email sent successfully', code: resetCode });
+
+            // Realiza una nueva consulta para obtener los datos actualizados
+            const querySelect = 'SELECT resetPasswordToken, resetPasswordExpires FROM Users WHERE email = ?';
+            connection.query(querySelect, [email], (selectError, selectResults) => {
+                if (selectError) {
+                    console.error('Error fetching updated user data:', selectError);
+                    return res.status(500).json({ error: 'Error fetching updated user data' });
+                }
+
+                if (selectResults.length === 0) {
+                    return res.status(404).json({ error: 'User not found after update' });
+                }
+
+                const userData = selectResults[0];
+                res.status(200).json({
+                    message: 'Reset email sent successfully',
+                    code: resetCode,
+                    token: userData.resetPasswordToken,
+                    expires: userData.resetPasswordExpires
+                });
+            });
         });
     });
 });
+
 
 
 
