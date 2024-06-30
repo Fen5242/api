@@ -94,10 +94,13 @@ app.post('/api/users/login', async (req, res) => {
 // Solicitud de restablecimiento de contraseña
 app.post('/api/reset-password', (req, res) => {
     const { email } = req.body;
-    const resetCode = Math.floor(100000 + Math.random() * 900000);
+    const resetCode = Math.floor(100000 + Math.random() * 900000); // Genera un código de 6 dígitos
+
+    // Establece la expiración para 5 minutos en el futuro
+    const expirationTime = Date.now() + (5 * 60 * 1000); // 5 minutos en milisegundos
 
     const query = 'UPDATE Users SET resetPasswordToken = ?, resetPasswordExpires = ? WHERE email = ?';
-    const values = [resetCode, Date.now() + 3600000, email];
+    const values = [resetCode, expirationTime, email];
 
     connection.query(query, values, (error, results) => {
         if (error) {
@@ -111,7 +114,7 @@ app.post('/api/reset-password', (req, res) => {
 
         const mailOptions = {
             to: email,
-            from: 'kusitour.app@gmail.com',
+            from: 'sanchezfsb3@gmail.com',
             subject: 'Restablecer contraseña en Kusitour',
             text: `Ha solicitado un restablecimiento de contraseña en la aplicación KUSITOUR. Utilice el siguiente código: ${resetCode}`
         };
@@ -126,27 +129,29 @@ app.post('/api/reset-password', (req, res) => {
     });
 });
 
+
 // Verificación de código de restablecimiento de contraseña
 app.post('/api/verify-code', (req, res) => {
-  const { email, code } = req.body;
-
-  const query = 'SELECT * FROM Users WHERE email = ? AND resetPasswordToken = ? AND resetPasswordExpires > ?';
-  const values = [email, code, Date.now()];
-
-  connection.query(query, values, (error, results) => {
-      if (error) {
-          console.error('Error verifying reset code:', error);
-          return res.status(500).json({ error: 'Database query error during code verification' });
-      }
-
-      if (results.length === 0) {
-          return res.status(404).json({ error: 'Incorrect code or code expired' });
-      }
-
-      // Código correcto
-      res.status(200).json({ message: 'Code verified successfully' });
+    const { email, code } = req.body;
+  
+    const query = 'SELECT * FROM Users WHERE email = ? AND resetPasswordToken = ? AND resetPasswordExpires > ?';
+    const now = Date.now();
+    const values = [email, code, now];
+  
+    connection.query(query, values, (error, results) => {
+        if (error) {
+            console.error('Error verifying reset code:', error);
+            return res.status(500).json({ error: 'Database query error during code verification' });
+        }
+  
+        if (results.length === 0) {
+            return res.status(404).json({ error: 'Incorrect code or code expired' });
+        }
+  
+        res.status(200).json({ message: 'Code verified successfully' });
+    });
   });
-});
+  
 
 
 app.listen(port, () => {
