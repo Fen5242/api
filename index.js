@@ -29,8 +29,8 @@ connection.connect(error => {
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
-        user: 'sanchezfsb3@gmail.com',
-        pass: 'ameb sqso anmt tatr'
+        user: 'kusitour.app@gmail.com',
+        pass: 'swhl kgfo wpzl grrk'
     }
 });
 
