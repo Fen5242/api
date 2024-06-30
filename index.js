@@ -112,8 +112,8 @@ app.post('/api/reset-password', (req, res) => {
         const mailOptions = {
             to: email,
             from: 'kusitour.app@gmail.com',
-            subject: 'Password Reset Code',
-            text: `You have requested a password reset. Please use the following code: ${resetCode}`
+            subject: 'Restablecer contraseña en Kusitour',
+            text: `Ha solicitado un restablecimiento de contraseña en la aplicación KUSITOUR. Utilice el siguiente código: ${resetCode}`
         };
 
         transporter.sendMail(mailOptions, (mailError, info) => {
