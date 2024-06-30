@@ -129,12 +129,12 @@ app.post('/api/reset-password', (req, res) => {
 
 
 // Verificación de código de restablecimiento de contraseña
+// Verificación de código de restablecimiento de contraseña
 app.post('/api/verify-code', (req, res) => {
-    const { email, code } = req.body;
-    const numericCode = parseInt(code, 10); // Asegúrate de convertir el código de string a número
+    const { email, code } = req.body;  // 'code' debería ser un número ya
 
     const query = 'SELECT * FROM Users WHERE email = ? AND resetPasswordToken = ? AND resetPasswordExpires > ?';
-    const values = [email, numericCode, Date.now()];
+    const values = [email, code, Date.now()];  // 'code' es usado directamente como número
 
     connection.query(query, values, (error, results) => {
         if (error) {
@@ -150,6 +150,7 @@ app.post('/api/verify-code', (req, res) => {
         res.status(200).json({ message: 'Code verified successfully' });
     });
 });
+
 
 
 
