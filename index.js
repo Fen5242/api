@@ -127,6 +127,7 @@ app.post('/api/reset-password', (req, res) => {
 });
 
 
+
 // Verificación de código de restablecimiento de contraseña
 app.post('/api/verify-code', (req, res) => {
     const { email, code } = req.body;
@@ -149,6 +150,7 @@ app.post('/api/verify-code', (req, res) => {
         res.status(200).json({ message: 'Code verified successfully' });
     });
 });
+
 
 
 app.listen(port, () => {
