@@ -126,6 +126,29 @@ app.post('/api/reset-password', (req, res) => {
     });
 });
 
+// Verificación del código de restablecimiento de contraseña
+app.post('/api/verify-code', (req, res) => {
+  const { email, code } = req.body;
+  const query = 'SELECT resetPasswordToken, resetPasswordExpires FROM Users WHERE email = ?';
+  
+  connection.query(query, [email], (error, results) => {
+      if (error) {
+          console.error('Database query error:', error);
+          return res.status(500).json({ error: 'Error checking reset code' });
+      }
+
+      if (results.length === 0 || Date.now() > results[0].resetPasswordExpires) {
+          return res.status(404).json({ error: 'Invalid or expired code' });
+      }
+
+      if (parseInt(code) !== results[0].resetPasswordToken) {
+          return res.status(400).json({ error: 'Incorrect code' });
+      }
+
+      res.status(200).json({ message: 'Code verified successfully' });
+  });
+});
+
 app.listen(port, () => {
     console.log(`Server running on port ${port}`);
 });
