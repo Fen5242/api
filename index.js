@@ -39,27 +39,41 @@ app.post('/api/users', async (req, res) => {
     const { username, email, password } = req.body;
 
     try {
-        // Verificar si el correo ya existe en la base de datos
-        const checkEmailQuery = `SELECT * FROM Users WHERE email = ?`;
-        connection.query(checkEmailQuery, [email], async (error, results) => {
-            if (error) {
-                console.error('Error checking email:', error);
-                return res.status(500).json({ error: 'Error checking email' });
+        // Verificar si el nombre de usuario ya existe en la base de datos
+        const checkUsernameQuery = `SELECT * FROM Users WHERE username = ?`;
+        connection.query(checkUsernameQuery, [username], async (usernameError, usernameResults) => {
+            if (usernameError) {
+                console.error('Error checking username:', usernameError);
+                return res.status(500).json({ error: 'Error checking username' });
             }
 
-            if (results.length > 0) {
-                // El correo ya está en uso
-                return res.status(400).json({ error: 'Este correo ya está en uso' });
+            if (usernameResults.length > 0) {
+                // El nombre de usuario ya está en uso
+                return res.status(400).json({ error: 'Este nombre de usuario ya está en uso' });
             } else {
-                // El correo no está en uso, proceder con la inserción del nuevo usuario
-                const hashedPassword = await bcrypt.hash(password, 10);
-                const insertUserQuery = `INSERT INTO Users (username, email, password) VALUES (?, ?, ?)`;
-                connection.query(insertUserQuery, [username, email, hashedPassword], (error, results) => {
-                    if (error) {
-                        console.error('Error inserting user:', error);
-                        return res.status(500).json({ error: 'Error inserting user' });
+                // Verificar si el correo ya existe en la base de datos
+                const checkEmailQuery = `SELECT * FROM Users WHERE email = ?`;
+                connection.query(checkEmailQuery, [email], async (emailError, emailResults) => {
+                    if (emailError) {
+                        console.error('Error checking email:', emailError);
+                        return res.status(500).json({ error: 'Error checking email' });
                     }
-                    res.status(201).json({ id: results.insertId, username, email });
+
+                    if (emailResults.length > 0) {
+                        // El correo ya está en uso
+                        return res.status(400).json({ error: 'Este correo ya está en uso' });
+                    } else {
+                        // El nombre de usuario y el correo no están en uso, proceder con la inserción del nuevo usuario
+                        const hashedPassword = await bcrypt.hash(password, 10);
+                        const insertUserQuery = `INSERT INTO Users (username, email, password) VALUES (?, ?, ?)`;
+                        connection.query(insertUserQuery, [username, email, hashedPassword], (insertError, insertResults) => {
+                            if (insertError) {
+                                console.error('Error inserting user:', insertError);
+                                return res.status(500).json({ error: 'Error inserting user' });
+                            }
+                            res.status(201).json({ id: insertResults.insertId, username, email });
+                        });
+                    }
                 });
             }
         });
@@ -68,8 +82,6 @@ app.post('/api/users', async (req, res) => {
         return res.status(500).json({ error: 'Error hashing password' });
     }
 });
-
-
 
 // Inicio de sesión
 app.post('/api/users/login', async (req, res) => {
