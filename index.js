@@ -169,8 +169,30 @@ app.post('/api/verify-code', (req, res) => {
     });
 });
 
+// Cambio de contraseña
+app.post('/api/change-password', async (req, res) => {
+    const { email, newPassword } = req.body;
 
+    try {
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        const query = 'UPDATE Users SET password = ? WHERE email = ?';
+        connection.query(query, [hashedPassword, email], (error, results) => {
+            if (error) {
+                console.error('Error updating password:', error);
+                return res.status(500).json({ error: 'Error updating password' });
+            }
 
+            if (results.affectedRows === 0) {
+                return res.status(404).json({ error: 'No user found with that email address' });
+            }
+
+            res.status(200).json({ message: 'Password changed successfully' });
+        });
+    } catch (error) {
+        console.error('Error hashing password:', error);
+        return res.status(500).json({ error: 'Error hashing password' });
+    }
+});
 
 
 app.listen(port, () => {
