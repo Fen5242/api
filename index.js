@@ -126,28 +126,28 @@ app.post('/api/reset-password', (req, res) => {
     });
 });
 
-// Verificación del código de restablecimiento de contraseña
+// Verificación de código de restablecimiento de contraseña
 app.post('/api/verify-code', (req, res) => {
   const { email, code } = req.body;
-  const query = 'SELECT resetPasswordToken, resetPasswordExpires FROM Users WHERE email = ?';
-  
-  connection.query(query, [email], (error, results) => {
+
+  const query = 'SELECT * FROM Users WHERE email = ? AND resetPasswordToken = ? AND resetPasswordExpires > ?';
+  const values = [email, code, Date.now()];
+
+  connection.query(query, values, (error, results) => {
       if (error) {
-          console.error('Database query error:', error);
-          return res.status(500).json({ error: 'Error checking reset code' });
+          console.error('Error verifying reset code:', error);
+          return res.status(500).json({ error: 'Database query error during code verification' });
       }
 
-      if (results.length === 0 || Date.now() > results[0].resetPasswordExpires) {
-          return res.status(404).json({ error: 'Invalid or expired code' });
+      if (results.length === 0) {
+          return res.status(404).json({ error: 'Incorrect code or code expired' });
       }
 
-      if (parseInt(code) !== results[0].resetPasswordToken) {
-          return res.status(400).json({ error: 'Incorrect code' });
-      }
-
+      // Código correcto
       res.status(200).json({ message: 'Code verified successfully' });
   });
 });
+
 
 app.listen(port, () => {
     console.log(`Server running on port ${port}`);
